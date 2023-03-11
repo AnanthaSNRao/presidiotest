@@ -4,22 +4,16 @@ import os
 from django.core.files.storage import FileSystemStorage
 from django.conf import settings
 import csv
-import json
-
-TABLE_NAME_PREFIX = 'presidio-test-db'
-OUTPUT_BUCKET = 'long-term-storage-presidio'
-tmpfilename = 'lts-Presidio.csv'
-OUTPUT_KEY= 'lts-Presidio'
 
 S3_client = boto3.client('s3',  aws_access_key_id= settings.AWS_ACCESS_KEY_ID,
          aws_secret_access_key= settings.AWS_SECRET_ACCESS_KEY)
 dynamodb_client = boto3.resource('dynamodb',  aws_access_key_id= settings.AWS_ACCESS_KEY_ID,
-         aws_secret_access_key= settings.AWS_SECRET_ACCESS_KEY, region_name='us-west-1')
-
+         aws_secret_access_key= settings.AWS_SECRET_ACCESS_KEY, region_name= settings.AWS_REGION_NAME)
+tmpfilename = 'lts-Presidio.csv'
 
 
 def handler():
-    table = dynamodb_client.Table(TABLE_NAME_PREFIX )
+    table = dynamodb_client.Table(settings.TABLE_NAME )
     with open(tmpfilename, 'w') as output_file:
         writer = csv.writer(output_file)
         header = True
@@ -47,10 +41,10 @@ def handler():
                 break
 
     # Upload temp file to S3
-    S3_client.upload_file(tmpfilename, OUTPUT_BUCKET ,OUTPUT_KEY)
-    location = 'us-west-1'
+    S3_client.upload_file(tmpfilename, settings.OUTPUT_BUCKET ,settings.OUTPUT_KEY)
+    location = settings.AWS_REGION_NAME
     os.remove(tmpfilename)
-    url = "https://s3-%s.amazonaws.com/%s/%s" % (location, OUTPUT_BUCKET, OUTPUT_KEY)
+    url = "https://s3-%s.amazonaws.com/%s/%s" % (location, settings.OUTPUT_BUCKET, settings.OUTPUT_KEY)
     return url
 
 def get_list():
@@ -68,6 +62,8 @@ def get_list():
 
 
 def upload(f):
+    if not f:
+        return False
     name = f.name
     object_name = None
     fs = FileSystemStorage()
@@ -79,11 +75,8 @@ def upload(f):
         object_name = os.path.basename(file_name)
 
     # Upload the file
-
-    s3_client = boto3.client('s3',  aws_access_key_id= settings.AWS_ACCESS_KEY_ID,
-        aws_secret_access_key= settings.AWS_SECRET_ACCESS_KEY)
     try:
-        response = s3_client.upload_file(file_name, "presidio-test", object_name)
+        response = S3_client.upload_file(file_name, "presidio-test", object_name)
     except ClientError as e:
         print(e)
     
