@@ -8,8 +8,8 @@ import json
 
 TABLE_NAME_PREFIX = 'presidio-test-db'
 OUTPUT_BUCKET = 'long-term-storage-presidio'
-tmpfilename_PREFIX = 'lts-Presidio'
-OUTPUT_KEY_PREFIX = 'lts-Presidio'
+tmpfilename = 'lts-Presidio.csv'
+OUTPUT_KEY= 'lts-Presidio'
 
 S3_client = boto3.client('s3',  aws_access_key_id= settings.AWS_ACCESS_KEY_ID,
          aws_secret_access_key= settings.AWS_SECRET_ACCESS_KEY)
@@ -18,9 +18,8 @@ dynamodb_client = boto3.resource('dynamodb',  aws_access_key_id= settings.AWS_AC
 
 
 
-def handler(name):
-    table = dynamodb_client.Table(TABLE_NAME_PREFIX + '-' +name)
-    tmpfilename = tmpfilename_PREFIX + name
+def handler():
+    table = dynamodb_client.Table(TABLE_NAME_PREFIX )
     with open(tmpfilename, 'w') as output_file:
         writer = csv.writer(output_file)
         header = True
@@ -48,9 +47,10 @@ def handler(name):
                 break
 
     # Upload temp file to S3
-    S3_client.upload_file(tmpfilename, OUTPUT_BUCKET ,OUTPUT_KEY_PREFIX + '-'+ name)
+    S3_client.upload_file(tmpfilename, OUTPUT_BUCKET ,OUTPUT_KEY)
     location = 'us-west-1'
-    url = "https://s3-%s.amazonaws.com/%s%s" % (location, OUTPUT_BUCKET, tmpfilename)
+    os.remove(tmpfilename)
+    url = "https://s3-%s.amazonaws.com/%s/%s" % (location, OUTPUT_BUCKET, OUTPUT_KEY)
     return url
 
 def get_list():
