@@ -5,6 +5,7 @@
 <form method="post" enctype="multipart/form-data">
     {% csrf_token %}
     <input type="file" name="my_file">
+    <p>{{url}}</p>
     <button type="submit">Submit</button>
 </form>
 {% endblock %}
