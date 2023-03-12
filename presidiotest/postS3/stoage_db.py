@@ -2,18 +2,18 @@ import boto3
 from botocore.exceptions import ClientError
 import os
 from django.core.files.storage import FileSystemStorage
-from django.conf import settings
+from decouple import config
 import csv
 
-S3_client = boto3.client('s3',  aws_access_key_id= settings.AWS_ACCESS_KEY_ID,
-         aws_secret_access_key= settings.AWS_SECRET_ACCESS_KEY)
-dynamodb_client = boto3.resource('dynamodb',  aws_access_key_id= settings.AWS_ACCESS_KEY_ID,
-         aws_secret_access_key= settings.AWS_SECRET_ACCESS_KEY, region_name= settings.AWS_REGION_NAME)
+S3_client = boto3.client('s3',  aws_access_key_id= config('AWS_ACCESS_KEY_ID'),
+         aws_secret_access_key= config('AWS_SECRET_ACCESS_KEY'))
+dynamodb_client = boto3.resource('dynamodb',  aws_access_key_id= config('AWS_ACCESS_KEY_ID'),
+         aws_secret_access_key= config('AWS_SECRET_ACCESS_KEY'), region_name= config('AWS_REGION_NAME'))
 tmpfilename = 'lts-Presidio.csv'
 
 
 def handler():
-    table = dynamodb_client.Table(settings.TABLE_NAME )
+    table = dynamodb_client.Table(config('TABLE_NAME') )
     with open(tmpfilename, 'w') as output_file:
         writer = csv.writer(output_file)
         header = True
@@ -41,10 +41,10 @@ def handler():
                 break
 
     # Upload temp file to S3
-    S3_client.upload_file(tmpfilename, settings.OUTPUT_BUCKET ,settings.OUTPUT_KEY)
-    location = settings.AWS_REGION_NAME
+    S3_client.upload_file(tmpfilename, config('OUTPUT_BUCKET') ,config('OUTPUT_KEY'))
+    location = config('AWS_REGION_NAME')
     os.remove(tmpfilename)
-    url = "https://s3-%s.amazonaws.com/%s/%s" % (location, settings.OUTPUT_BUCKET, settings.OUTPUT_KEY)
+    url = "https://s3-%s.amazonaws.com/%s/%s" % (location, config('OUTPUT_BUCKET'), config('OUTPUT_KEY'))
     return url
 
 def get_list():
