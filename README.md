@@ -37,6 +37,10 @@ To run the tests, use the following command:
 
 $ python manage.py test
 
+## Get the Post man Collection
+
+https://api.postman.com/collections/3484924-0eaf3402-b7ac-4169-8209-65876d80edcf?access_key=PMAT-01GVBW9MQ7G7RFEDZ1X0HQ06HH
+
 
 
 
