@@ -1,7 +1,9 @@
 from django.shortcuts import render
-from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseNotFound
+from django.http import HttpResponse
 from . import stoage_db
+from django.views.decorators.csrf import csrf_exempt
 
+@csrf_exempt
 def get(request):
     if request.method == 'POST':
         f = request.FILES.get('my_file', None)
@@ -15,7 +17,7 @@ def get(request):
     else:
         return render(request, 'form.html')
     
-
+@csrf_exempt
 def download(request):
     url = stoage_db.handler()
     if url is None or not url:
