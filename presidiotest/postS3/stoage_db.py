@@ -47,17 +47,17 @@ def handler():
     url = "https://s3-%s.amazonaws.com/%s/%s" % (location, config('OUTPUT_BUCKET'), config('OUTPUT_KEY'))
     return url
 
-def get_list():
-    table_names = []
-    response = dynamodb_client.list_tables()
+# def get_list():
+#     table_names = []
+#     response = dynamodb_client.list_tables()
 
-    while True:
-        table_names.extend(response['TableNames'])
-        if 'LastEvaluatedTableName' not in response:
-            break
-        response = dynamodb_client.list_tables(ExclusiveStartTableName=response['LastEvaluatedTableName'])
+#     while True:
+#         table_names.extend(response['TableNames'])
+#         if 'LastEvaluatedTableName' not in response:
+#             break
+#         response = dynamodb_client.list_tables(ExclusiveStartTableName=response['LastEvaluatedTableName'])
 
-    return table_names
+#     return table_names
 
 
 
@@ -76,7 +76,7 @@ def upload(f):
 
     # Upload the file
     try:
-        response = S3_client.upload_file(file_name, "presidio-test", object_name)
+        response = S3_client.upload_file(file_name, config('INITIAL_S3_BUCKET_NAME'), object_name)
     except ClientError as e:
         print(e)
     

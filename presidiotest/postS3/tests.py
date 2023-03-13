@@ -6,7 +6,7 @@ from unittest.mock import patch, MagicMock
 from django.core.files.base import ContentFile
 
 
-class MyViewTests(TestCase):
+class PostS3ViewTests(TestCase):
     def setUp(self):
         self.factory = RequestFactory()
 
@@ -72,3 +72,45 @@ class MyViewTests(TestCase):
             self.assertEqual(response.status_code, 404)
             # self.assertTemplateUsed(response, 'form.html')
             # self.assertContains(response, 'No file available for download.')
+
+
+
+import boto3
+from moto import mock_s3, mock_dynamodb
+from .stoage_db import handler, upload
+from decouple import config
+from django.conf import settings
+
+class StorageDBTest(TestCase):
+    
+    def setUp(self):
+        self.factory = RequestFactory()
+        self.f = open(str(settings.BASE_DIR) + '/static/test_data.txt', 'r')
+
+    @mock_s3
+    @mock_dynamodb    
+    def test_handler(self):
+        self.S3conn = boto3.resource("s3", region_name= config('AWS_REGION_NAME'))
+        location = {'LocationConstraint': config('AWS_REGION_NAME')}
+        # We need to create the bucket since this is all in Moto's 'virtual' AWS account
+        self.S3conn.create_bucket(Bucket= config('OUTPUT_BUCKET'), CreateBucketConfiguration=location)
+
+        self.dbcon = boto3.resource('dynamodb',  region_name= config('AWS_REGION_NAME'))
+        self.table = self.dbcon.create_table(
+            TableName=config('TABLE_NAME'),
+            KeySchema=[{"AttributeName": "id", "KeyType": "HASH"}],
+            AttributeDefinitions=[{"AttributeName": "id", "AttributeType": "S"}],
+            ProvisionedThroughput={"ReadCapacityUnits": 5, "WriteCapacityUnits": 5},
+        )
+        self.table.put_item(Item ={"id":'1' ,"name": "foo"})
+        url = handler()
+        self.assertEqual(url, "https://s3-us-west-1.amazonaws.com/long-term-storage-presidio/lts-Presidio")
+    
+    @mock_s3 
+    def test_upload(self):
+        self.S3conn = boto3.resource("s3", region_name= config('AWS_REGION_NAME'))
+        location = {'LocationConstraint': config('AWS_REGION_NAME')}
+        # We need to create the bucket since this is all in Moto's 'virtual' AWS account
+        self.S3conn.create_bucket(Bucket= config('INITIAL_S3_BUCKET_NAME'), CreateBucketConfiguration=location)
+        res = upload(self.f)
+        self.assertEqual(res, True)
