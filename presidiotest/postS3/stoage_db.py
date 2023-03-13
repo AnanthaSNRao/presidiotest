@@ -4,7 +4,9 @@ import os
 from django.core.files.storage import FileSystemStorage
 from decouple import config
 import csv
+import logging
 
+logger = logging.getLogger("presidiotest")
 S3_client = boto3.client('s3',  aws_access_key_id= config('AWS_ACCESS_KEY_ID'),
          aws_secret_access_key= config('AWS_SECRET_ACCESS_KEY'))
 dynamodb_client = boto3.resource('dynamodb',  aws_access_key_id= config('AWS_ACCESS_KEY_ID'),
@@ -39,25 +41,26 @@ def handler():
             # Last page?
             if 'LastEvaluatedKey' not in response:
                 break
-
+                
     # Upload temp file to S3
     S3_client.upload_file(tmpfilename, config('OUTPUT_BUCKET') ,config('OUTPUT_KEY'))
     location = config('AWS_REGION_NAME')
     os.remove(tmpfilename)
     url = "https://s3-%s.amazonaws.com/%s/%s" % (location, config('OUTPUT_BUCKET'), config('OUTPUT_KEY'))
     return url
+   
 
-# def get_list():
-#     table_names = []
-#     response = dynamodb_client.list_tables()
+def get_list():
+    table_names = []
+    response = dynamodb_client.list_tables()
 
-#     while True:
-#         table_names.extend(response['TableNames'])
-#         if 'LastEvaluatedTableName' not in response:
-#             break
-#         response = dynamodb_client.list_tables(ExclusiveStartTableName=response['LastEvaluatedTableName'])
+    while True:
+        table_names.extend(response['TableNames'])
+        if 'LastEvaluatedTableName' not in response:
+            break
+        response = dynamodb_client.list_tables(ExclusiveStartTableName=response['LastEvaluatedTableName'])
 
-#     return table_names
+    return table_names
 
 
 
@@ -78,7 +81,8 @@ def upload(f):
     try:
         response = S3_client.upload_file(file_name, config('INITIAL_S3_BUCKET_NAME'), object_name)
     except ClientError as e:
-        print(e)
+        logger.exception(e)
+        raise e
     
     os.remove(file_name)
     return True
