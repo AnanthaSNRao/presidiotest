@@ -4,6 +4,11 @@ from django.core.files.uploadedfile import InMemoryUploadedFile
 from .views import get, download
 from unittest.mock import patch, MagicMock
 from django.core.files.base import ContentFile
+import boto3
+from moto import mock_s3, mock_dynamodb
+from .stoage_db import handler, upload
+from decouple import config
+from django.conf import settings
 
 
 class PostS3ViewTests(TestCase):
@@ -17,16 +22,18 @@ class PostS3ViewTests(TestCase):
         }
         request = self.factory.post('/myview/', data=data)
         with patch('postS3.views.stoage_db.upload', return_value=True) as mock_upload:
-            response = get(request)
-            self.assertEqual(response.status_code, 200)
+             with patch('postS3.views.logger') as mock_logger:
+                response = get(request)
+                self.assertEqual(response.status_code, 200)
             # self.assertContains(response.content, 'File uploaded successfully.')
             # mock_upload.assert_called_once_with(data['my_file'])
 
         # Test POST request with no file
         data = {}
         request = self.factory.post('/myview/', data=data)
-        response = get(request)
-        self.assertEqual(response.status_code, 400)
+        with patch('postS3.views.logger') as mock_logger:
+            response = get(request)
+            self.assertEqual(response.status_code, 400)
         # self.assertContains(response.content, 'Please select a file.')
 
         # Test POST request with an invalid file type
@@ -34,8 +41,9 @@ class PostS3ViewTests(TestCase):
         'my_file': InMemoryUploadedFile(ContentFile('example text'), None, 'test.png', 'png/image', len('example text'), None)
         }
         request = self.factory.post('/myview/', data=data)
-        response = get(request)
-        self.assertEqual(response.status_code, 400)
+        with patch('postS3.views.logger') as mock_logger:
+            response = get(request)
+            self.assertEqual(response.status_code, 400)
         # self.assertContains(response, 'Invalid file type. Only text files are allowed.')
 
         # Test POST request with a file that fails to upload
@@ -75,11 +83,6 @@ class PostS3ViewTests(TestCase):
 
 
 
-import boto3
-from moto import mock_s3, mock_dynamodb
-from .stoage_db import handler, upload
-from decouple import config
-from django.conf import settings
 
 class StorageDBTest(TestCase):
     
