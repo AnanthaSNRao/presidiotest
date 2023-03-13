@@ -106,8 +106,9 @@ class StorageDBTest(TestCase):
             ProvisionedThroughput={"ReadCapacityUnits": 5, "WriteCapacityUnits": 5},
         )
         self.table.put_item(Item ={"id":'1' ,"name": "foo"})
-        url = handler()
-        self.assertEqual(url, "https://s3-us-west-1.amazonaws.com/long-term-storage-presidio/lts-Presidio")
+        with patch('postS3.stoage_db.empty_dynamodb') as mock_handler:
+            url = handler()
+            self.assertEqual(url, "https://s3-us-west-1.amazonaws.com/long-term-storage-presidio/lts-Presidio")
     
     @mock_s3 
     def test_upload(self):
