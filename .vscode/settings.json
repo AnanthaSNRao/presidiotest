@@ -1,0 +1,11 @@
+{
+    "python.testing.unittestArgs": [
+        "-v",
+        "-s",
+        "./presidiotest/*",
+        "-p",
+        "tests.py"
+    ],
+    "python.testing.pytestEnabled": false,
+    "python.testing.unittestEnabled": false
+}

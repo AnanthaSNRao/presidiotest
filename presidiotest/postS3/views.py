@@ -33,7 +33,7 @@ def download(request):
         if url is None or not url:
             return HttpResponse('No file available for download.', status=404)
         
-        return render(request, 'form.html', {'url': url})
+        return HttpResponse(url) 
     except Exception as e:
         logger.error(e)
         return HttpResponse("Internal Server Error", status=500)
